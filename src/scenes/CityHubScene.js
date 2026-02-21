@@ -1,0 +1,100 @@
+import { GameState, randomRobot } from "../systems/gameState.js";
+import { ITEMS } from "../data/gameData.js";
+import { addItem } from "../systems/inventory.js";
+
+export class CityHubScene extends Phaser.Scene {
+  constructor() {
+    super("CityHubScene");
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor(0x23395b);
+    this.add.text(16, 12, "Main City Hub", { fontSize: "22px", color: "#ffffff" });
+    this.add.text(16, 38, "Move: arrows/WASD | E: interact | T: teleport to farm", { color: "#d7e3fc" });
+    this.add.text(16, 58, "R: random robot | K: quick customize | F5 save | F9 load", { color: "#d7e3fc" });
+
+    this.player = this.physics.add.existing(this.add.rectangle(GameState.player.x, GameState.player.y, 18, 18, 0x7bdff2));
+    this.player.body.setCollideWorldBounds(true);
+
+    this.shopZone = this.add.rectangle(770, 270, 140, 90, 0x264653).setStrokeStyle(2, 0xffffff);
+    this.add.text(728, 238, "Robot Shop", { color: "#ffffff" });
+    this.teleportPad = this.add.rectangle(100, 450, 48, 48, 0x9d4edd).setStrokeStyle(2, 0xffffff);
+    this.add.text(68, 478, "TP", { color: "#ffffff" });
+
+    this.npcSprites = new Map();
+    for (const npc of GameState.npcs) {
+      const s = this.add.rectangle(npc.x, npc.y, 16, 16, npc.role === "shopkeeper" ? 0xf28482 : 0x84a59d);
+      this.npcSprites.set(npc.id, s);
+    }
+
+    this.keys = this.input.keyboard.addKeys("W,A,S,D,E,T,R,K");
+  }
+
+  update(_, dt) {
+    GameState.player.mapId = "city";
+    const speed = GameState.player.baseSpeed;
+    const body = this.player.body;
+    body.setVelocity(0, 0);
+    if (this.keys.A.isDown) body.setVelocityX(-speed);
+    if (this.keys.D.isDown) body.setVelocityX(speed);
+    if (this.keys.W.isDown) body.setVelocityY(-speed);
+    if (this.keys.S.isDown) body.setVelocityY(speed);
+
+    GameState.player.x = this.player.x;
+    GameState.player.y = this.player.y;
+
+    this.updateNPCSchedules(dt / 1000);
+
+    if (Phaser.Input.Keyboard.JustDown(this.keys.R)) {
+      GameState.player.robot = randomRobot();
+      this.scene.get("UIScene").events.emit("toast", `Randomized robot: ${GameState.player.robot.palette}`);
+    }
+
+    if (Phaser.Input.Keyboard.JustDown(this.keys.K)) {
+      const palettes = ["teal", "orange", "violet", "mint", "red"];
+      const idx = palettes.indexOf(GameState.player.robot.palette);
+      GameState.player.robot.palette = palettes[(idx + 1) % palettes.length];
+      this.scene.get("UIScene").events.emit("toast", `Palette set: ${GameState.player.robot.palette}`);
+    }
+
+    const nearPad = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.teleportPad.x, this.teleportPad.y) < 52;
+    if (nearPad && Phaser.Input.Keyboard.JustDown(this.keys.T)) {
+      GameState.player.x = 100;
+      GameState.player.y = 480;
+      this.scene.start("FarmPlotScene");
+      return;
+    }
+
+    const shopkeeper = this.npcSprites.get("shopkeeper");
+    const nearShop = Phaser.Math.Distance.Between(this.player.x, this.player.y, shopkeeper.x, shopkeeper.y) < 40;
+    if (nearShop && Phaser.Input.Keyboard.JustDown(this.keys.E)) {
+      const minute = GameState.time.minute;
+      const open = minute >= 540 && minute <= 1020;
+      if (!open) {
+        this.scene.get("UIScene").events.emit("toast", "Shop closed (09:00-17:00)");
+      } else {
+        this.openQuickShop();
+      }
+    }
+  }
+
+  openQuickShop() {
+    if (GameState.currency >= ITEMS.turnip_seed.buyPrice) {
+      addItem(GameState.inventory, "turnip_seed", 1);
+      GameState.currency -= ITEMS.turnip_seed.buyPrice;
+      this.scene.get("UIScene").events.emit("toast", "Bought 1 Turnip Seed");
+    }
+  }
+
+  updateNPCSchedules() {
+    const minute = GameState.time.minute;
+    for (const npc of GameState.npcs) {
+      const entry = npc.schedule.find((s) => minute >= s.start && minute <= s.end) ?? npc.schedule[0];
+      npc.behavior = entry.behavior;
+      npc.x = Phaser.Math.Linear(npc.x, entry.pos.x, 0.03);
+      npc.y = Phaser.Math.Linear(npc.y, entry.pos.y, 0.03);
+      const sprite = this.npcSprites.get(npc.id);
+      sprite.setPosition(npc.x, npc.y);
+    }
+  }
+}
