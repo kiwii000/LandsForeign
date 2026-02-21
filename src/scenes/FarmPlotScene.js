@@ -1,6 +1,7 @@
 import { CROPS } from "../data/gameData.js";
 import { GameState, getOrCreateFarmTile } from "../systems/gameState.js";
 import { addItem, getSelectedItem, removeItem } from "../systems/inventory.js";
+import { generateRobotTexture } from "../systems/robotSprites.js";
 
 const TILE = 32;
 
@@ -14,7 +15,8 @@ export class FarmPlotScene extends Phaser.Scene {
     this.add.text(16, 12, "Starter Farm Plot", { fontSize: "22px", color: "#ffffff" });
     this.add.text(16, 38, "1-9/0/-/= hotbar | E action | Q seed | M mount | T city | TAB inventory", { color: "#e9f5db", fontSize: "14px" });
 
-    this.player = this.physics.add.sprite(GameState.player.x, GameState.player.y, "robot_player");
+    generateRobotTexture(this, "robot_player_dynamic", GameState.player.robot, { scale: 2 });
+    this.player = this.physics.add.sprite(GameState.player.x, GameState.player.y, "robot_player_dynamic");
     this.player.body.setSize(16, 20).setCollideWorldBounds(true);
 
     this.mount = this.add.sprite(0, 0, "ship").setVisible(false);

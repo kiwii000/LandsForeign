@@ -1,18 +1,28 @@
 import { GameState, randomRobot } from "../systems/gameState.js";
 import { ITEMS } from "../data/gameData.js";
 import { addItem } from "../systems/inventory.js";
+import { generateRobotTexture, paletteColor } from "../systems/robotSprites.js";
 
 export class CityHubScene extends Phaser.Scene {
   constructor() {
     super("CityHubScene");
   }
 
+  createRobotTextures() {
+    generateRobotTexture(this, "robot_player_dynamic", GameState.player.robot, { scale: 2 });
+    for (const npc of GameState.npcs) {
+      generateRobotTexture(this, `robot_npc_${npc.id}`, npc.robot, { scale: 2 });
+    }
+  }
+
   create() {
+    this.createRobotTextures();
+
     this.cameras.main.setBackgroundColor(0x23395b);
     this.add.text(16, 12, "Main City Hub", { fontSize: "22px", color: "#ffffff" });
-    this.add.text(16, 38, "WASD move | E interact/shop | T teleport | R randomize robot", { color: "#d7e3fc" });
+    this.add.text(16, 38, "WASD move | E interact/shop | T teleport | R regenerate robot sprite", { color: "#d7e3fc" });
 
-    this.player = this.physics.add.sprite(GameState.player.x, GameState.player.y, "robot_player");
+    this.player = this.physics.add.sprite(GameState.player.x, GameState.player.y, "robot_player_dynamic");
     this.player.body.setSize(16, 20).setCollideWorldBounds(true);
 
     this.shopZone = this.add.rectangle(770, 270, 140, 90, 0x264653).setStrokeStyle(2, 0xffffff);
@@ -22,7 +32,8 @@ export class CityHubScene extends Phaser.Scene {
 
     this.npcSprites = new Map();
     for (const npc of GameState.npcs) {
-      const s = this.add.sprite(npc.x, npc.y, "robot_npc");
+      const s = this.add.sprite(npc.x, npc.y, `robot_npc_${npc.id}`);
+      s.setTint(paletteColor(npc.robot.palette));
       this.npcSprites.set(npc.id, s);
     }
 
@@ -46,7 +57,9 @@ export class CityHubScene extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(this.keys.R)) {
       GameState.player.robot = randomRobot();
-      this.scene.get("UIScene").events.emit("toast", `Randomized robot parts (${GameState.player.robot.palette})`);
+      generateRobotTexture(this, "robot_player_dynamic", GameState.player.robot, { scale: 2 });
+      this.player.setTexture("robot_player_dynamic");
+      this.scene.get("UIScene").events.emit("toast", `Generated new robot (${GameState.player.robot.head}/${GameState.player.robot.palette})`);
     }
 
     const nearPad = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.teleportPad.x, this.teleportPad.y) < 58;

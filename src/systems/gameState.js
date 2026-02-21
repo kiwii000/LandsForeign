@@ -4,6 +4,23 @@ function randPick(arr, rng = Math.random) {
   return arr[Math.floor(rng() * arr.length)];
 }
 
+function hashString(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededRng(seedInput) {
+  let seed = typeof seedInput === "number" ? seedInput >>> 0 : hashString(seedInput);
+  return () => {
+    seed = (1664525 * seed + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+}
+
 export function randomRobot(rng = Math.random) {
   return {
     head: randPick(ROBOT_PARTS.head, rng),
@@ -13,6 +30,10 @@ export function randomRobot(rng = Math.random) {
     legs: randPick(ROBOT_PARTS.legs, rng),
     palette: randPick(ROBOT_PARTS.palette, rng)
   };
+}
+
+export function robotFromSeed(seedValue) {
+  return randomRobot(seededRng(seedValue));
 }
 
 export const GameState = {
@@ -40,7 +61,7 @@ export const GameState = {
     { id: "t2", x: 710, y: 240, hp: 3, maxHp: 3 },
     { id: "t3", x: 520, y: 360, hp: 3, maxHp: 3 }
   ],
-  npcs: NPCS.map((n) => ({ ...n, x: n.homePos.x, y: n.homePos.y, behavior: "idle" }))
+  npcs: NPCS.map((n) => ({ ...n, x: n.homePos.x, y: n.homePos.y, behavior: "idle", robot: robotFromSeed(n.id) }))
 };
 
 GameState.inventory.slots[0] = { itemId: "hoe", qty: 1 };
@@ -101,6 +122,6 @@ export function loadGame() {
   GameState.inventory = parsed.inventory;
   GameState.farmTiles = parsed.farmTiles;
   GameState.trees = parsed.trees;
-  GameState.npcs = parsed.npcs;
+  GameState.npcs = parsed.npcs.map((npc) => ({ ...npc, robot: npc.robot ?? robotFromSeed(npc.id) }));
   return true;
 }

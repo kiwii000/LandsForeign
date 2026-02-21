@@ -24,32 +24,6 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create() {
-    makeTexture(this, "robot_player", [
-      "....aa....",
-      "...abba...",
-      "...abca...",
-      "...abba...",
-      "..dddddd..",
-      "..deeeed..",
-      "..deeeed..",
-      "..dffffd..",
-      "...f..f...",
-      "...f..f..."
-    ], { a: 0xadb5bd, b: 0xe9ecef, c: 0x00b4d8, d: 0x6c757d, e: 0x495057, f: 0x343a40 }, 2);
-
-    makeTexture(this, "robot_npc", [
-      "....aa....",
-      "...abba...",
-      "...acca...",
-      "...abba...",
-      "..dddddd..",
-      "..deeeed..",
-      "..deeeed..",
-      "..dffffd..",
-      "...f..f...",
-      "...f..f..."
-    ], { a: 0xdee2e6, b: 0xf8f9fa, c: 0xff758f, d: 0x8d99ae, e: 0x6c757d, f: 0x495057 }, 2);
-
     makeTexture(this, "tree", [
       "...gggg...",
       "..gggggg..",

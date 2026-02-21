@@ -8,7 +8,7 @@ Phaser 3 + Vite + JavaScript prototype implementing the requested V1 foundation:
 - Stardew-like bottom toolbar (12 slots) + toggleable inventory grid (TAB)
 - Farming (till, plant, water, harvest) with Turnip and Blueberry
 - Outlined target tile in front of the player for precise soil/crop actions
-- Basic pixel-art humanoid robot sprites for player/NPCs
+- Procedurally generated pixel-art humanoid robot sprites for player/NPCs
 - Basic pixel-art tree/stump and crop sprites
 - Tree chopping + wood gathering
 - Robot NPC schedules + shop hours behavior
